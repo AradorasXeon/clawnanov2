@@ -1,7 +1,7 @@
 #define DEBUG
 //#define MUSIC
 
-#include "communication.h"
+#include "communication.hpp"
 #include "communicationMusic.h"
 #include "timer.h"
 #include "millisTimer.hpp"
@@ -18,8 +18,6 @@
 #define RIGHT 10    //purple
 #define UP 11       //green
 #define DOWN 12     //white
-
-
 
 void setup() 
 {

@@ -1,4 +1,4 @@
-#include <Wire.h>
+#include "/home/krisztian/arduino/libraries/Wire/Wire.h"
 
 #define I2C_MUSIC_CTRL_ADDRESS 0xF1
 
