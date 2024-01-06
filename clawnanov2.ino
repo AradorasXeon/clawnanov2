@@ -19,6 +19,8 @@
 #define UP 11       //green
 #define DOWN 12     //white
 
+MoveMaster msgMove;
+
 void setup() 
 {
   // initialize digital pin LED_BUILTIN as an output.
@@ -34,6 +36,7 @@ void setup()
   digitalWrite(LED_BUILTIN, LOW);
   digitalWrite(CLAW_PIN, LOW);
 
+  msgMove = MoveMaster();
 
   strip.begin();
   strip.setBrightness(LED_BRIGHTNESS);
