@@ -21,12 +21,13 @@
 
 #define START_UP_CALIB_TIME_MS  2500
 #define TIMER_CHECK_RECEIVED_MS 100 
-#define TIMER_LOOP_MS           50    
+#define TIMER_LOOP_MS           250    //needs further testing with lower value, now it is this high because of debugging
 
 
 MoveMaster msgMove;
 MillisTimer timerCheckReceived(TIMER_CHECK_RECEIVED_MS);
 MillisTimer timerLoop(TIMER_LOOP_MS);
+MillisTimer timer2seconds(2000);
 
 
 void setup() 
@@ -81,7 +82,7 @@ void loop()
   */
 }
 
-void refreshControllState() //later I should add sone LED controll here
+void refreshControllState() //later I should add some LED controll here
 {
   msgMove.setDefaultControllState();
 
@@ -115,10 +116,18 @@ void refreshControllState() //later I should add sone LED controll here
 void doCalibration()
 {
   //Inits calibration
-  doCheckCalibState(msgMove, &MoveMaster::calibInit, Claw_Calibration::CLAW_CALIB_INIT);
+  //doCheckCalibState(msgMove, &MoveMaster::calibInit, Claw_Calibration::CLAW_CALIB_INIT);
+
+  //for test reasons I skipp doCheckCalibState
+  msgMove.calibInit();
+  msgMove.sendMessageToSlave();
+  timerCheckReceived.doDelay();
 
   //First we calibrate the top side
-  doCheckCalibState(msgMove, &MoveMaster::calibStratTop, Claw_Calibration::CLAW_CALIB_TOP_STATE_IN_PROGRESS);
+  //doCheckCalibState(msgMove, &MoveMaster::calibStratTop, Claw_Calibration::CLAW_CALIB_TOP_STATE_IN_PROGRESS);
+  msgMove.calibStratTop();
+  msgMove.sendMessageToSlave();
+  timerCheckReceived.doDelay();
 
   FillStripPart(150, 100, 0, 0, LED_LAST);
 
@@ -130,13 +139,22 @@ void doCalibration()
   }
 
   //We are done with top calib 
-  doCheckCalibState(msgMove, &MoveMaster::calibFinishTop, Claw_Calibration::CLAW_CALIB_TOP_DONE);
+  //doCheckCalibState(msgMove, &MoveMaster::calibFinishTop, Claw_Calibration::CLAW_CALIB_TOP_DONE);
+  msgMove.calibFinishTop();
+  msgMove.sendMessageToSlave();
+  timerCheckReceived.doDelay();
 
   //Second we calibrate the top side
-  doCheckCalibState(msgMove, &MoveMaster::calibStartDown, Claw_Calibration::CLAW_CALIB_DOWN_STATE_IN_PROGRESS);
+  //doCheckCalibState(msgMove, &MoveMaster::calibStartDown, Claw_Calibration::CLAW_CALIB_DOWN_STATE_IN_PROGRESS);
+  msgMove.calibStartDown();
+  msgMove.sendMessageToSlave();
+  timerCheckReceived.doDelay();
+
+  timer2seconds.doDelay();
 
   FillStripPart(0, 100, 150, 0, LED_LAST);
 
+  msgMove.setDefaultControllState();
   while(!msgMove.wasButtonPressed())
   {
     refreshControllState();
@@ -145,10 +163,16 @@ void doCalibration()
   }
 
   //We are done with down calib 
-  doCheckCalibState(msgMove, &MoveMaster::calibFinishDown, Claw_Calibration::CLAW_CALIB_DOWN_DONE);
+  //doCheckCalibState(msgMove, &MoveMaster::calibFinishDown, Claw_Calibration::CLAW_CALIB_DOWN_DONE);
+  msgMove.calibFinishDown();
+  msgMove.sendMessageToSlave();
+  timerCheckReceived.doDelay();
 
   //Send finish calib signal
-  doCheckCalibState(msgMove, &MoveMaster::calibDone, Claw_Calibration::CLAW_CALIB_FINISHED);
+  //doCheckCalibState(msgMove, &MoveMaster::calibDone, Claw_Calibration::CLAW_CALIB_FINISHED);
+  msgMove.calibDone();
+  msgMove.sendMessageToSlave();
+  timerCheckReceived.doDelay();
 
   //should put here an auto pull up the claw later, and make it prallel with the LED show
 
@@ -157,6 +181,8 @@ void doCalibration()
   FillStripPart(1, 1, 1, 0, LED_LAST);
 
 }
+
+//Currently not in use might try it later
 
 /// @brief Makes sure that the message went through to the slave, only returns if the slave got the message
 /// @param moveObject the MoveMaster class 
