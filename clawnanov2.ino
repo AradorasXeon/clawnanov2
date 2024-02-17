@@ -25,6 +25,7 @@
 
 
 MoveMaster msgMove;
+Music msgMusic = Music(true);
 MillisTimer timerCheckReceived(TIMER_CHECK_RECEIVED_MS);
 MillisTimer timerLoop(TIMER_LOOP_MS);
 MillisTimer timer2seconds(2000);
@@ -65,6 +66,8 @@ void setup()
     //don't forget to start gameplay music as well, if no calibration is done
   }
   doCalibration();
+  msgMusic.setGamePlayMusic();
+  msgMusic.sendMsg();
 }
 
 void loop() 
@@ -89,6 +92,17 @@ void refreshControllState() //later I should add some LED controll here
   if(digitalRead(BUTTON))
   {
     msgMove.setButton();
+    //more logic ... waiting for claw to drop down, etc
+    msgMusic.setClawActionMusic();
+    msgMusic.sendMsg();
+    //waiting
+    /*
+    msgMusic.setPrizeDropMusic();
+    msgMusic.sendMsg();
+    //waiting
+    msgMusic.setGamePlayMusic();
+    msgMusic.sendMsg();
+    */
   }
 
   if(digitalRead(LEFT))
@@ -115,6 +129,8 @@ void refreshControllState() //later I should add some LED controll here
 
 void doCalibration()
 {
+  msgMusic.setCalibrationMusic();
+  msgMusic.sendMsg();
   //Inits calibration
   //doCheckCalibState(msgMove, &MoveMaster::calibInit, Claw_Calibration::CLAW_CALIB_INIT);
 
