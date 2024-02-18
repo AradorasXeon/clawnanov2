@@ -21,7 +21,8 @@
 
 #define START_UP_CALIB_TIME_MS  2500
 #define TIMER_CHECK_RECEIVED_MS 100 
-#define TIMER_LOOP_MS           250    //needs further testing with lower value, now it is this high because of debugging
+#define TIMER_LOOP_MS           250     //needs further testing with lower value, now it is this high because of debugging
+#define TIME_CLAW_CLOSE_TIME_MS 1000    //for now
 
 
 MoveMaster msgMove;
@@ -29,7 +30,10 @@ Music msgMusic = Music(true);
 MillisTimer timerCheckReceived(TIMER_CHECK_RECEIVED_MS);
 MillisTimer timerLoop(TIMER_LOOP_MS);
 MillisTimer timer2seconds(2000);
+MillisTimer timerClawClose(TIME_CLAW_CLOSE_TIME_MS);
 
+
+bool calibrationDone = false;
 
 void setup() 
 {
@@ -93,16 +97,46 @@ void refreshControllState() //later I should add some LED controll here
   {
     msgMove.setButton();
     //more logic ... waiting for claw to drop down, etc
-    msgMusic.setClawActionMusic();
-    msgMusic.sendMsg();
-    //waiting
-    /*
-    msgMusic.setPrizeDropMusic();
-    msgMusic.sendMsg();
-    //waiting
-    msgMusic.setGamePlayMusic();
-    msgMusic.sendMsg();
-    */
+    if(calibrationDone)
+    {
+      //then it means that the button is used for claw drop
+      msgMusic.setClawActionMusic();
+      msgMusic.sendMsg();
+      //since setButton was called the claw should already go down, we put a while loop here, so we send the msg before that
+      msgMove.sendMessageToSlave();
+      while(!msgMove.isZatBottom())
+      {
+        msgMove.readMessageFromSlave();
+        timerCheckReceived.doDelay();   //might need a different timer with at least 500 ms
+        #ifdef DEBUG
+          Serial.println("if Z @ bottom");
+        #endif // DEBUG
+      }
+
+      //Do claw close here, add some delay, maybe some LED show
+      timerClawClose.doDelay();
+
+      while(!msgMove.isZatTop())
+      {
+        msgMove.readMessageFromSlave();
+        timerCheckReceived.doDelay();   //might need a different timer with at least 500 ms
+        #ifdef DEBUG
+          Serial.println("if Z @ top");
+        #endif // DEBUG
+      }
+
+      msgMusic.setPrizeDropMusic();
+      msgMusic.sendMsg();
+      //go to left most position
+      //go to down most position
+      //release claw
+
+      //do some LED show
+      /*
+      msgMusic.setGamePlayMusic();
+      msgMusic.sendMsg();
+      */
+    }
   }
 
   if(digitalRead(LEFT))
@@ -129,6 +163,8 @@ void refreshControllState() //later I should add some LED controll here
 
 void doCalibration()
 {
+  calibrationDone = false;
+
   msgMusic.setCalibrationMusic();
   msgMusic.sendMsg();
   //Inits calibration
@@ -190,7 +226,8 @@ void doCalibration()
   msgMove.sendMessageToSlave();
   timerCheckReceived.doDelay();
 
-  //should put here an auto pull up the claw later, and make it prallel with the LED show
+  calibrationDone = true;
+  //auto pull up on UNO side
 
   rainbowCycle(2);
 
