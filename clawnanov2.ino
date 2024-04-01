@@ -11,6 +11,12 @@
   #include <avr/power.h>
 #endif
 
+#ifdef DEBUG
+  #define DEBUG_PRINTLN(msg) Serial.println(msg)
+#else
+  #define DEBUG_PRINTLN(msg)
+#endif // DEBUG
+
 //comments here are my wire colors
 #define CLAW_PIN 2  //not colored --> soldered directly to transistor
 #define BUTTON 8    //yellow
@@ -23,6 +29,7 @@
 #define TIMER_CHECK_RECEIVED_MS 100 
 #define TIMER_LOOP_MS           250     //needs further testing with lower value, now it is this high because of debugging
 #define TIME_CLAW_CLOSE_TIME_MS 1000    //for now
+#define TIME_TRAVEL_TO_HOME_MS  3500    //for now
 
 
 MoveMaster msgMove;
@@ -31,6 +38,7 @@ MillisTimer timerCheckReceived(TIMER_CHECK_RECEIVED_MS);
 MillisTimer timerLoop(TIMER_LOOP_MS);
 MillisTimer timer2seconds(2000);
 MillisTimer timerClawClose(TIME_CLAW_CLOSE_TIME_MS);
+MillisTimer timerTravelHome(TIME_TRAVEL_TO_HOME_MS);
 
 
 bool calibrationDone = false;
@@ -104,38 +112,41 @@ void refreshControllState() //later I should add some LED controll here
       msgMusic.sendMsg();
       //since setButton was called the claw should already go down, we put a while loop here, so we send the msg before that
       msgMove.sendMessageToSlave();
-      while(!msgMove.isZatBottom())
+      LightUpScene();
+      
+      do
       {
         msgMove.readMessageFromSlave();
         timerCheckReceived.doDelay();   //might need a different timer with at least 500 ms
-        #ifdef DEBUG
-          Serial.println("if Z @ bottom");
-        #endif // DEBUG
-      }
+        DEBUG_PRINTLN("if Z @ bottom");
+      }while(!msgMove.isZatBottom());
 
       //Do claw close here, add some delay, maybe some LED show
+      digitalWrite(CLAW_PIN, HIGH);
       timerClawClose.doDelay();
 
-      while(!msgMove.isZatTop())
+      do
       {
         msgMove.readMessageFromSlave();
         timerCheckReceived.doDelay();   //might need a different timer with at least 500 ms
-        #ifdef DEBUG
-          Serial.println("if Z @ top");
-        #endif // DEBUG
-      }
+        DEBUG_PRINTLN("if Z @ top");
+      }while(!msgMove.isZatTop());
 
       msgMusic.setPrizeDropMusic();
       msgMusic.sendMsg();
       //go to left most position
       //go to down most position
+      //later either add a property to check if the claw is at home position
+      rainbowCycleShort(1);
+      timerTravelHome.doDelay();
       //release claw
+      digitalWrite(CLAW_PIN, LOW);
+      
+      FillStripPart(1, 1, 1, 0, LED_LAST);
 
-      //do some LED show
-      /*
+
       msgMusic.setGamePlayMusic();
       msgMusic.sendMsg();
-      */
     }
   }
 

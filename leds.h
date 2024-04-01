@@ -77,6 +77,15 @@ void FillStripPartSlow(uint8_t r, uint8_t g, uint8_t b, uint16_t startLed, uint1
   }
 }
 
+void LightUpScene()
+{
+  for(uint16_t i=LED_LEFT_MIN; i<=LED_UP_MAX; i++) 
+  {
+    strip.setPixelColor(i, strip.Color(255, 255, 255));
+  }
+    strip.show();
+}
+
 void ErrorLed()
 {
   while (1) //delibaretly not exiting from here, while debugging
@@ -121,6 +130,18 @@ void rainbowCycle(uint8_t wait) {
   uint16_t i, j;
 
   for(j=0; j<256*5; j++) { // 5 cycles of all colors on wheel
+    for(i=0; i< strip.numPixels(); i++) {
+      strip.setPixelColor(i, Wheel(((i * 256 / strip.numPixels()) + j) & 255));
+    }
+    strip.show();
+    MillisTimer::delayThisMuch(wait);
+  }
+}
+
+void rainbowCycleShort(uint8_t wait) {
+  uint16_t i, j;
+
+  for(j=0; j<256*2; j++) { // 5 cycles of all colors on wheel
     for(i=0; i< strip.numPixels(); i++) {
       strip.setPixelColor(i, Wheel(((i * 256 / strip.numPixels()) + j) & 255));
     }
