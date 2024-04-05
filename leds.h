@@ -25,7 +25,7 @@
 
 #define LED_DELAY_MS 1
 #define LED_LONG_DELAY_MS 80
-
+#define LED_BK_GND_LOW 60
 
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
@@ -42,6 +42,49 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(LED_LAST, LED_PIN, NEO_GRB + NEO_KHZ
 
 MillisTimer timerLEDdelay(LED_DELAY_MS);
 MillisTimer timerLEDlongDelay(LED_LONG_DELAY_MS);
+
+uint8_t bkgnd[3];
+int8_t bkgndIncrement[3];
+
+void initBackGroundShow()
+{
+  bkgnd[0] = LED_BK_GND_LOW;
+  bkgnd[1] = LED_BK_GND_LOW + 20;
+  bkgnd[2] = LED_BK_GND_LOW + 45;
+
+  bkgndIncrement[0] = 5;
+  bkgndIncrement[1] = 1;
+  bkgndIncrement[2] = 10;
+
+}
+
+/// @brief needs initBackGroundShow to be called at setup, this shall be called at every loop end
+void LedBackGroundShow()
+{
+  for(uint16_t i=LED_LEFT_MIN; i<=LED_UP_MAX; i+=3) // i am lucky now because LED_UP_MAX is divisible with 3
+  {
+    strip.setPixelColor(i+0, strip.Color(bkgnd[0], bkgnd[1], bkgnd[2]));
+    strip.setPixelColor(i+1, strip.Color(bkgnd[1], bkgnd[2], bkgnd[0]));
+    strip.setPixelColor(i+2, strip.Color(bkgnd[2], bkgnd[0], bkgnd[1]));
+  }
+  strip.show();
+  
+  bkgnd[0] += bkgndIncrement[0];
+  bkgnd[1] += bkgndIncrement[1];
+  bkgnd[2] += bkgndIncrement[2];
+
+  for(uint8_t i = 0; i<3; i++)
+  {
+    if(bkgnd[i] < LED_BK_GND_LOW) //this means we overflowed
+    {
+      bkgnd[i] = 255;
+      bkgndIncrement[i] *= -1;
+    }
+  }
+
+}
+
+
 
 /// @brief Fills part of the actual Adafruit_NeoPixel led strip
 /// @param r red

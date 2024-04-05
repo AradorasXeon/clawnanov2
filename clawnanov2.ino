@@ -28,15 +28,15 @@
 #define START_UP_CALIB_TIME_MS  2500
 #define TIMER_CHECK_RECEIVED_MS 100 
 #define TIMER_LOOP_MS           250     //needs further testing with lower value, now it is this high because of debugging
-#define TIME_CLAW_CLOSE_TIME_MS 1000    //for now
-#define TIME_TRAVEL_TO_HOME_MS  3500    //for now
+#define TIME_CLAW_CLOSE_TIME_MS 200    //for now
+#define TIME_TRAVEL_TO_HOME_MS  9500    //for now
 
 
 MoveMaster msgMove;
 Music msgMusic = Music(true);
 MillisTimer timerCheckReceived(TIMER_CHECK_RECEIVED_MS);
 MillisTimer timerLoop(TIMER_LOOP_MS);
-MillisTimer timer2seconds(2000);
+MillisTimer timer1second(1000);
 MillisTimer timerClawClose(TIME_CLAW_CLOSE_TIME_MS);
 MillisTimer timerTravelHome(TIME_TRAVEL_TO_HOME_MS);
 
@@ -62,6 +62,7 @@ void setup()
 
   strip.begin();
   strip.setBrightness(LED_BRIGHTNESS);
+  initBackGroundShow();
   FillStripPart(1, 1, 255, 0, LED_LAST);
 
   //Debug:
@@ -80,6 +81,7 @@ void setup()
   doCalibration();
   msgMusic.setGamePlayMusic();
   msgMusic.sendMsg();
+  LedBackGroundShow();
 }
 
 void loop() 
@@ -87,14 +89,7 @@ void loop()
   refreshControllState();
   msgMove.sendMessageToSlave();
   timerLoop.doDelay();
-
-  /* 
-  FillStripPartSlow(0, 255, 0, LED_LEFT_MIN, LED_LEFT_MAX);
-  FillStripPartSlow(255, 255, 0, LED_DOWN_MIN, LED_DOWN_MAX);
-  FillStripPartSlow(0, 255, 255, LED_RIGHT_MIN, LED_RIGHT_MAX);
-  FillStripPartSlow(255, 0, 255, LED_UP_MIN, LED_UP_MAX);
-  FillStripPart(1, 1, 255, 0, LED_LAST);
-  */
+  LedBackGroundShow();
 }
 
 void refreshControllState() //later I should add some LED controll here
@@ -114,6 +109,7 @@ void refreshControllState() //later I should add some LED controll here
       msgMove.sendMessageToSlave();
       LightUpScene();
       
+      //while going down
       do
       {
         msgMove.readMessageFromSlave();
@@ -125,6 +121,7 @@ void refreshControllState() //later I should add some LED controll here
       digitalWrite(CLAW_PIN, HIGH);
       timerClawClose.doDelay();
 
+      //while going up
       do
       {
         msgMove.readMessageFromSlave();
@@ -134,11 +131,20 @@ void refreshControllState() //later I should add some LED controll here
 
       msgMusic.setPrizeDropMusic();
       msgMusic.sendMsg();
-      //go to left most position
-      //go to down most position
-      //later either add a property to check if the claw is at home position
+      //going to left most position
+      //going to down most position
+
+      msgMove.setDefaultControllState(); //making sure to reset the button set flag, i do this on the motor ctrl-er side as well, but doesn't seem to be working now
+      msgMusic.sendMsg();
+
       rainbowCycleShort(1);
-      timerTravelHome.doDelay();
+      //timerTravelHome.doDelay();
+      do
+      {
+        msgMove.readMessageFromSlave();
+        timerCheckReceived.doDelay();   //might need a different timer with at least 500 ms
+        DEBUG_PRINTLN("if @ home");
+      }while(!msgMove.isClawAtHome());
       //release claw
       digitalWrite(CLAW_PIN, LOW);
       
@@ -213,7 +219,7 @@ void doCalibration()
   msgMove.sendMessageToSlave();
   timerCheckReceived.doDelay();
 
-  timer2seconds.doDelay();
+  timer1second.doDelay();
 
   FillStripPart(0, 100, 150, 0, LED_LAST);
 
