@@ -84,6 +84,9 @@ void setup()
   LedBackGroundShow();
 }
 
+/// @brief Since I could not solve that sometimes the motor controller restes, I will just reset the main controller as well, forcing an overall system restart
+void(*ResetFunc) (void) = 0; //declare reset function @ address 0
+
 void loop() 
 {
   refreshControllState();
@@ -137,6 +140,12 @@ void refreshControllState() //later I should add some LED controll here
       msgMove.setDefaultControllState(); //making sure to reset the button set flag, i do this on the motor ctrl-er side as well, but doesn't seem to be working now
       msgMusic.sendMsg();
 
+      //see if motor control reseted:
+      if(msgMove.isZatTop() && msgMove.isZatBottom() && calibrationDone)
+      {
+        ResetFunc();
+      }
+
       rainbowCycleShort(1);
       //timerTravelHome.doDelay();
       do
@@ -150,6 +159,11 @@ void refreshControllState() //later I should add some LED controll here
       
       FillStripPart(1, 1, 1, 0, LED_LAST);
 
+      //see if motor control reseted:
+      if(msgMove.isZatTop() && msgMove.isZatBottom() && calibrationDone)
+      {
+        ResetFunc();
+      }
 
       msgMusic.setGamePlayMusic();
       msgMusic.sendMsg();
